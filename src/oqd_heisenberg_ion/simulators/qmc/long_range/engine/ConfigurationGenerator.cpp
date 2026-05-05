@@ -31,8 +31,8 @@ ConfigurationGenerator::ConfigurationGenerator(const SimulationParameters &sim_p
         loop_start_position_generator.seed(off_diagonal_update_seed);
 
         logger->info("SSE loop parameter initialization:");
-        logger->info("hamiltonian_type = 2, average_cumulative_loop_size = {}, max_loop_size = {}, N_l = {}",
-            average_cumulative_loop_size, max_loop_size, num_total_legs, N_l);
+        logger->info("hamiltonian_type = {}, average_cumulative_loop_size = {}, max_loop_size = {}, N_l = {}",
+            hamiltonian_type, average_cumulative_loop_size, max_loop_size, N_l);
         logger->info("count_non_skipped_loop_updates = {}, skip_loop_update = {}",
             count_non_skipped_loop_updates, skip_loop_update);
 
