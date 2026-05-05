@@ -26,23 +26,24 @@ def compute_ed_energy(preprocessor_ed):
     ed_outputs_file = os.path.join(preprocessor_ed.processed_configs[0]["misc"]["run_folder"], "ed_output/energies.csv")
     T = preprocessor_ed.processed_configs[0]["sampling"]["T"]
     ed_outputs = np.loadtxt(ed_outputs_file, delimiter=",", skiprows=1)
-    ground_state_energy = post_proc.ed_energy(ed_outputs, T)
+    ground_state_energy = post_proc.ed_energy(ed_outputs, T, 1)
 
     return ground_state_energy
 
 
 @pytest.mark.parametrize(
-    ["hamiltonian_name", "alpha", "loop_type"],
+    ["hamiltonian_name", "alpha", "h", "loop_type"],
     [
-        ["fm_heisenberg_afm_Z", 1.0, "deterministic"],
-        ["fm_heisenberg_fm_Z", 2.0, "deterministic"],
-        ["XXZ", 1.5, "directed_loop"],
-        ["XY", 1.0, "deterministic"],
-        ["XY", 3.0, "deterministic"],
-        ["XY", 10.0, "deterministic"],
+        ["fm_heisenberg_afm_Z", 1.0, 0.0, "deterministic"],
+        ["fm_heisenberg_fm_Z", 2.0, 0.0, "deterministic"],
+        ["XXZ", 1.5, 0.0, "directed_loop"],
+        ["XXZh", 2.5, 1.5, "directed_loop"],
+        ["XY", 1.0, 0.0, "deterministic"],
+        ["XY", 3.0, 0.0, "deterministic"],
+        ["XY", 10.0, 0.0, "deterministic"],
     ],
 )
-def test_long_range(hamiltonian_name, alpha, loop_type, tmp_path):
+def test_long_range(hamiltonian_name, alpha, h, loop_type, tmp_path):
 
     input_file = "tests/input_files/long_range.txt"
     inputs = InputReader(input_file_path=input_file)
@@ -51,6 +52,7 @@ def test_long_range(hamiltonian_name, alpha, loop_type, tmp_path):
     inputs.read_kwarg_inputs(
         hamiltonian_name=hamiltonian_name,
         alpha=alpha,
+        h = h,
         loop_type=loop_type,
         equilibration_steps=10000,
         simulation_steps=10000,

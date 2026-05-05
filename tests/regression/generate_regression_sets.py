@@ -16,14 +16,21 @@ def compute_qmc_stats(qmc_outputs_file):
 
 
 # Long range QMC
-names = ["fm_heisenberg_afm_Z", "fm_heisenberg_fm_Z", "XXZ", "XY", "XY", "XY"]
-alphas = [1.0, 2.0, 1.5, 1.0, 3.0, 10.0]
+#names = ["fm_heisenberg_afm_Z", "fm_heisenberg_fm_Z", "XXZ", "XXZh", "XXZh", "XY", "XY", "XY"]
+#alphas = [1.0, 2.0, 1.5, 2.5, 3.0, 1.0, 3.0, 10.0]
+#h_list = [0.0, 0.0, 0.0, 0.5, 1.0, 0.0, 0.0, 0.0]
+#loop_types = ["deterministic", "deterministic", "directed_loop", "directed_loop", "heatbath", "deterministic", "deterministic", "deterministic"]
+
+names = ["XXZ", "XXZh"]
+alphas = [2.5, 2.5]
+h_list = [0.0, 0.0]
+loop_types = ["directed_loop", "directed_loop"]
+
 uuids = [names[i] + "_alpha_" + str(alphas[i]) for i in range(len(names))]
-loop_types = ["deterministic", "deterministic", "directed_loop", "deterministic", "deterministic", "deterministic"]
 input_file = "tests/input_files/long_range.txt"
 inputs = InputReader(input_file_path=input_file)
 inputs.read_inputs_from_file()
-inputs.read_kwarg_inputs(hamiltonian_name=names, alpha=alphas, uuid=uuids, loop_type=loop_types)
+inputs.read_kwarg_inputs(hamiltonian_name=names, alpha=alphas, uuid=uuids, loop_type=loop_types, h=h_list)
 parameter_set_list = inputs.parameter_set_list
 preprocessor = PreprocessorFactory.create("long_range_qmc", parameter_set_list)
 driver_inputs = preprocessor.preprocess()
