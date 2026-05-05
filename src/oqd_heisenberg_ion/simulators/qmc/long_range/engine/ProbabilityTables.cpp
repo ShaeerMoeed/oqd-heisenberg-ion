@@ -227,7 +227,7 @@ ProbabilityTables::ProbabilityTables(const SimulationParameters &sim_params, con
 
     logger->info("Initializing Probability Tables");
 
-    if (sim_params.hamiltonian_type == 2)
+    if (sim_params.hamiltonian_type == 2 or sim_params.hamiltonian_type == 3)
     {
 
         diagonal_probabilities_file = sim_params.simulation_subfolder + "/probability_densities/diag_probs.csv";
