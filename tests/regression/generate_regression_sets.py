@@ -9,22 +9,15 @@ from oqd_heisenberg_ion.common.preprocessor.factory import PreprocessorFactory
 
 data_for_json = []
 
-
 def compute_qmc_stats(qmc_outputs_file):
     estimator_outputs = np.loadtxt(qmc_outputs_file, delimiter=",", skiprows=2)
     return np.mean(estimator_outputs, axis=0), np.std(estimator_outputs, axis=0)
 
-
 # Long range QMC
-#names = ["fm_heisenberg_afm_Z", "fm_heisenberg_fm_Z", "XXZ", "XXZh", "XXZh", "XY", "XY", "XY"]
-#alphas = [1.0, 2.0, 1.5, 2.5, 3.0, 1.0, 3.0, 10.0]
-#h_list = [0.0, 0.0, 0.0, 0.5, 1.0, 0.0, 0.0, 0.0]
-#loop_types = ["deterministic", "deterministic", "directed_loop", "directed_loop", "heatbath", "deterministic", "deterministic", "deterministic"]
-
-names = ["XXZ", "XXZh"]
-alphas = [2.5, 2.5]
-h_list = [0.0, 0.0]
-loop_types = ["directed_loop", "directed_loop"]
+names = ["fm_heisenberg_afm_Z", "fm_heisenberg_fm_Z", "XXZ", "XXZh", "XXZh", "XY", "XY", "XY"]
+alphas = [1.0, 2.0, 1.5, 2.5, 3.0, 1.0, 3.0, 10.0]
+h_list = [0.0, 0.0, 0.0, 0.5, 1.0, 0.0, 0.0, 0.0]
+loop_types = ["deterministic", "deterministic", "directed_loop", "directed_loop", "heatbath", "deterministic", "deterministic", "deterministic"]
 
 uuids = [names[i] + "_alpha_" + str(alphas[i]) for i in range(len(names))]
 input_file = "tests/input_files/long_range.txt"
@@ -45,6 +38,7 @@ for i in range(len(names)):
     stats_dict = {}
     stats_dict["name"] = names[i]
     stats_dict["alpha"] = alphas[i]
+    stats_dict["h"] = h_list[i]
     stats_dict["energy_mean"] = estimator_outputs[0][1]
     stats_dict["energy_std"] = estimator_outputs[1][1]
     stats_dict["magnetization_mean"] = estimator_outputs[0][2]

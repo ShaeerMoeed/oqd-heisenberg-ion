@@ -13,23 +13,27 @@ with open(os.path.abspath("tests/regression/regression_results.json"), "r") as f
 
 
 @pytest.mark.parametrize(
-    ["hamiltonian_name", "alpha", "loop_type", "case_iter"],
+    ["hamiltonian_name", "alpha", "h", "loop_type", "case_iter"],
     [
-        ["fm_heisenberg_afm_Z", 1.0, "deterministic", 0],
-        ["fm_heisenberg_fm_Z", 2.0, "deterministic", 1],
-        ["XXZ", 1.5, "directed_loop", 2],
-        ["XY", 1.0, "deterministic", 3],
-        ["XY", 3.0, "deterministic", 4],
-        ["XY", 10.0, "deterministic", 5],
+        ["fm_heisenberg_afm_Z", 1.0, 0.0, "deterministic", 0],
+        ["fm_heisenberg_fm_Z", 2.0, 0.0, "deterministic", 1],
+        ["XXZ", 1.5, 0.0, "directed_loop", 2],
+        ["XXZh", 2.5, 0.5, "directed_loop", 3],
+        ["XXZh", 3.0, 1.0, "heatbath", 4],
+        ["XY", 1.0, 0.0, "deterministic", 5],
+        ["XY", 3.0, 0.0, "deterministic", 6],
+        ["XY", 10.0, 0.0, "deterministic", 7],
     ],
 )
-def test_long_range(hamiltonian_name, alpha, loop_type, case_iter, tmp_path):
+
+
+def test_long_range(hamiltonian_name, alpha, h, loop_type, case_iter, tmp_path):
 
     # Long range QMC
     input_file = "tests/input_files/long_range.txt"
     inputs = InputReader(input_file_path=input_file)
     inputs.read_inputs_from_file()
-    inputs.read_kwarg_inputs(hamiltonian_name=hamiltonian_name, alpha=alpha, loop_type=loop_type, root_folder=tmp_path)
+    inputs.read_kwarg_inputs(hamiltonian_name=hamiltonian_name, alpha=alpha, h=h, loop_type=loop_type, root_folder=tmp_path)
     parameter_set_list = inputs.parameter_set_list
     preprocessor = PreprocessorFactory.create("long_range_qmc", parameter_set_list)
     driver_inputs = preprocessor.preprocess()
@@ -54,9 +58,9 @@ def test_long_range(hamiltonian_name, alpha, loop_type, case_iter, tmp_path):
 @pytest.mark.parametrize(
     ["hamiltonian_name", "J", "case_iter"],
     [
-        ["XY", 1.0, 6],
-        ["fm_heisenberg_fm_Z", 1.0, 7],
-        ["afm_heisenberg_fm_Z", -1.0, 8],
+        ["XY", 1.0, 8],
+        ["fm_heisenberg_fm_Z", 1.0, 9],
+        ["afm_heisenberg_fm_Z", -1.0, 10],
     ],
 )
 def test_nearest_neighbor(hamiltonian_name, J, case_iter, tmp_path):
