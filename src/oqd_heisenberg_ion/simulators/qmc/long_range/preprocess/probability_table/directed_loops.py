@@ -14,7 +14,7 @@ class DirectedLoops(ProbabilityTable):
     """
 
     args = {"gamma": float, "ksi": float, "distance_dependent_offset": bool}
-    allowed_hamiltonians = {"XXZ", "XXZh", "XY", "fm_heisenberg_fm_Z", "fm_heisenberg_afm_Z"}
+    allowed_hamiltonians = {"XXZ", "XXZh", "XY", "fm_heisenberg_fm_Z", "fm_heisenberg_afm_Z", "inhomogenous_XXZh"}
 
     def __init__(self, system, gamma, ksi, distance_dependent_offset):
         """
@@ -33,7 +33,7 @@ class DirectedLoops(ProbabilityTable):
         self.ksi = ksi
         self.distance_dependent_offset = distance_dependent_offset
 
-        self.h_B = self.system.compute_h_B()
+        print("Test")
 
         self.build()
 
@@ -65,17 +65,16 @@ class DirectedLoops(ProbabilityTable):
         self.initialize_tables(num_bonds)
         self.set_vertex_enum_transition_weights_map()
 
-        J_ij_vector = self.system.interactions.J_ij_vector
-
-        Delta = self.system.hamiltonian_parameters.Delta
-        h_B = self.h_B
+        xy_coeff_vector = self.system.hamiltonian_parameters.xy_coeff_array
+        zz_coeff_vector = self.system.hamiltonian_parameters.zz_coeff_array
+        h_b_vector = self.system.hamiltonian_parameters.z_field_array
 
         gamma = self.gamma
         ksi = self.ksi
         distance_dependent_offset = self.distance_dependent_offset
 
         self.compute_prob_tables_directed_loops(
-            num_bonds, J_ij_vector, gamma, h_B, Delta, ksi, distance_dependent_offset
+            num_bonds, xy_coeff_vector, gamma, h_b_vector, zz_coeff_vector, ksi, distance_dependent_offset
         )
 
     def initialize_tables(self, num_bonds):
@@ -182,19 +181,24 @@ class DirectedLoops(ProbabilityTable):
                     self.update_directed_loop_probs(int(vertex_enum), l_e, l_x, bond, l_x_weight)
 
     def compute_prob_tables_directed_loops(
-        self, num_bonds, J_ij_vector, gamma, h_B, Delta, ksi, distance_dependent_offset
+        self, num_bonds, xy_coeff_vector, gamma, h_b_vector, zz_coeff_vector, ksi, distance_dependent_offset
     ):
+        
+        if np.any(h_b_vector < 0.0):
+            raise Exception("h_B needs to be greater than or equal to 0")
 
-        self.transition_weights_calculator = LoopTransitionWeights(gamma, Delta, h_B, ksi, distance_dependent_offset)
+        self.transition_weights_calculator = LoopTransitionWeights(gamma, ksi, distance_dependent_offset)
 
         for bond in range(num_bonds):
-            J_ij = J_ij_vector[bond]
+            xy_coeff = xy_coeff_vector[bond]
+            zz_coeff = zz_coeff_vector[bond]
+            h_b = h_b_vector[bond]
 
-            vu.set_vertex_weights(self.vertex_weights, bond, Delta, J_ij, h_B)
+            vu.set_vertex_weights(self.vertex_weights, bond, zz_coeff, xy_coeff, h_b)
 
             self.diag_prob_table[:, bond] = self.vertex_weights[0:4, bond]
 
-            self.transition_weights_calculator.compute_transition_weights(J_ij)
+            self.transition_weights_calculator.compute_transition_weights(xy_coeff, zz_coeff, h_b)
 
             transition_weights = self.transition_weights_calculator.transition_weight_container
             offset = self.transition_weights_calculator.offset_b
@@ -251,20 +255,14 @@ class LoopTransitionWeights:
     See https://journals.aps.org/pre/abstract/10.1103/PhysRevE.66.046701 for details
     """
 
-    def __init__(self, gamma, Delta, h_B, ksi, distance_dependent_offset):
+    def __init__(self, gamma, ksi, distance_dependent_offset):
 
         keys = ["a", "b", "c", "a_p", "b_p", "c_p", "b_1", "b_2", "b_3", "b_1_p", "b_2_p", "b_3_p"]
         self.transition_weight_container = {key: None for key in keys}
 
-        self.Delta = Delta
-        self.h_B = h_B
-
         self.gamma = gamma
         self.ksi = ksi
         self.distance_dependent_offset = distance_dependent_offset
-
-        if self.h_B < 0.0:
-            raise Exception("h_B needs to be greater than or equal to 0")
 
     def populate_unprimed_transition_weights(self, a, b, c):
 
@@ -290,29 +288,29 @@ class LoopTransitionWeights:
         self.transition_weight_container["b_2_p"] = b_2_p
         self.transition_weight_container["b_3_p"] = b_3_p
 
-    def tranisiton_weights_small_field(self, Delta_over_four_J_ij, Delta_positive, Delta_negative):
+    def tranisiton_weights_small_field(self, zz_coeff_over_four, zz_p_xy_over_2, zz_m_xy_over_2, h_b):
 
-        self.offset_b = Delta_over_four_J_ij
+        self.offset_b = zz_coeff_over_four
 
-        if self.h_B >= Delta_negative:
+        if h_b >= zz_m_xy_over_2:
             b_3_p = 0.0
-            epsilon = -Delta_negative / 2.0 + self.h_B / 2.0 + self.gamma
+            epsilon = -zz_m_xy_over_2 / 2.0 + h_b / 2.0 + self.gamma
         else:
-            b_3_p = Delta_negative - self.h_B + self.ksi
+            b_3_p = zz_m_xy_over_2 - h_b + self.ksi
             epsilon = self.gamma
 
-        if self.h_B <= -Delta_negative:
+        if h_b <= -zz_m_xy_over_2:
             b_3 = 0.0
         else:
-            b_3 = Delta_negative + self.h_B + self.ksi
+            b_3 = zz_m_xy_over_2 + h_b + self.ksi
 
-        a_p = -Delta_negative / 2.0 + self.h_B / 2.0 + b_3_p / 2.0
-        b_p = Delta_positive / 2.0 - self.h_B / 2.0 - b_3_p / 2.0
-        c_p = Delta_negative / 2.0 + epsilon - self.h_B / 2.0 - b_3_p / 2.0
+        a_p = -zz_m_xy_over_2 / 2.0 + h_b / 2.0 + b_3_p / 2.0
+        b_p = zz_p_xy_over_2 / 2.0 - h_b / 2.0 - b_3_p / 2.0
+        c_p = zz_m_xy_over_2 / 2.0 + epsilon - h_b / 2.0 - b_3_p / 2.0
 
-        a = -Delta_negative / 2.0 - self.h_B / 2.0 + b_3 / 2.0
-        b = Delta_positive / 2.0 + self.h_B / 2.0 - b_3 / 2.0
-        c = epsilon + Delta_negative / 2.0 + self.h_B / 2.0 - b_3 / 2.0
+        a = -zz_m_xy_over_2 / 2.0 - h_b / 2.0 + b_3 / 2.0
+        b = zz_p_xy_over_2 / 2.0 + h_b / 2.0 - b_3 / 2.0
+        c = epsilon + zz_m_xy_over_2 / 2.0 + h_b / 2.0 - b_3 / 2.0
 
         b_1_p = 0.0
         b_2_p = 0.0
@@ -327,25 +325,23 @@ class LoopTransitionWeights:
         self.populate_unprimed_bounce_weights(b_1, b_2, b_3)
         self.populate_primed_bounce_weights(b_1_p, b_2_p, b_3_p)
 
-    def transition_weights_negative_Delta(self, Delta_over_four_J_ij, Delta_positive, Delta_negative, J_ij):
+    def transition_weights_negative_Delta(self, zz_coeff_over_four, zz_p_xy_over_2, zz_m_xy_over_2, xy_coeff, h_b):
 
-        if self.h_B == 0.0:
-            self.offset_b = -(self.Delta / 4.0) * J_ij
+        if h_b == 0.0:
+            self.offset_b = -zz_coeff_over_four
             if self.Delta <= -1.0:
                 if self.distance_dependent_offset:
-                    epsilon = self.gamma - (self.Delta / 10.0) * J_ij
-                    c_p = self.gamma - (self.Delta / 10.0) * J_ij
-                    # epsilon = gamma + 0.1/(r_b_pow_alpha)
-                    # c_p = gamma + 0.1/(r_b_pow_alpha)
+                    epsilon = self.gamma - zz_coeff_over_four/2.5
+                    c_p = self.gamma - zz_coeff_over_four/2.5
                 else:
                     epsilon = self.gamma
                     c_p = self.gamma
                 c = c_p
-                a_p = (1.0 / 2.0) * J_ij
+                a_p = (1.0 / 2.0) * xy_coeff
                 b_p = 0.0
                 a = a_p
                 b = b_p
-                b_2_p = -((1.0 + self.Delta) / 2.0) * J_ij
+                b_2_p = -zz_p_xy_over_2
                 b_2 = b_2_p
                 b_3_p = 0.0
                 b_1_p = 0.0
@@ -353,10 +349,10 @@ class LoopTransitionWeights:
                 b_3 = b_3_p
             else:
                 b_2_p = 0.0
-                b_p = ((1.0 + self.Delta) / (4.0)) * J_ij
-                a_p = ((1.0 - self.Delta) / (4.0)) * J_ij
+                b_p = zz_p_xy_over_2
+                a_p = -zz_m_xy_over_2
                 c_p = self.gamma
-                epsilon = ((1.0 + self.Delta) / (4.0)) * J_ij + self.gamma
+                epsilon = zz_p_xy_over_2/2.0 + self.gamma
                 c = c_p
                 a = a_p
                 b = b_p
@@ -366,32 +362,32 @@ class LoopTransitionWeights:
                 b_1 = b_1_p
                 b_3 = b_3_p
         else:
-            self.offset_b = self.h_B - Delta_over_four_J_ij
+            self.offset_b = h_b - zz_coeff_over_four
 
-            if self.h_B <= Delta_positive:
+            if h_b <= zz_p_xy_over_2:
                 b_2_p = 0.0
-                epsilon = Delta_positive / 2.0 - self.h_B / 2.0 + self.gamma
+                epsilon = zz_p_xy_over_2 / 2.0 - h_b / 2.0 + self.gamma
             else:
-                b_2_p = self.h_B - Delta_positive + self.ksi
+                b_2_p = h_b - zz_p_xy_over_2 + self.ksi
                 epsilon = self.gamma
 
-            if self.h_B <= -Delta_positive:
-                b_2 = -self.h_B - Delta_positive + self.ksi
+            if h_b <= -zz_p_xy_over_2:
+                b_2 = -h_b - zz_p_xy_over_2 + self.ksi
             else:
                 b_2 = 0.0
 
-            if self.h_B <= -Delta_negative:
+            if h_b <= -zz_m_xy_over_2:
                 b_3 = 0.0
             else:
-                b_3 = self.h_B + Delta_negative + self.ksi
+                b_3 = h_b + zz_m_xy_over_2 + self.ksi
 
-            a_p = -Delta_negative / 2.0 + self.h_B / 2.0 - b_2_p / 2.0
-            b_p = Delta_positive / 2.0 - self.h_B / 2.0 + b_2_p / 2.0
-            c_p = epsilon - Delta_positive / 2.0 + self.h_B / 2.0 - b_2_p / 2.0
+            a_p = -zz_m_xy_over_2 / 2.0 + h_b / 2.0 - b_2_p / 2.0
+            b_p = zz_p_xy_over_2 / 2.0 - h_b / 2.0 + b_2_p / 2.0
+            c_p = epsilon - zz_p_xy_over_2 / 2.0 + h_b / 2.0 - b_2_p / 2.0
 
-            a = -Delta_negative / 2.0 - self.h_B / 2.0 + b_3 / 2.0 - b_2 / 2.0
-            b = Delta_positive / 2.0 + self.h_B / 2.0 + b_2 / 2.0 - b_3 / 2.0
-            c = 3.0 * self.h_B / 2.0 + epsilon - Delta_positive / 2.0 - b_2 / 2.0 - b_3 / 2.0
+            a = -zz_m_xy_over_2 / 2.0 - h_b / 2.0 + b_3 / 2.0 - b_2 / 2.0
+            b = zz_p_xy_over_2 / 2.0 + h_b / 2.0 + b_2 / 2.0 - b_3 / 2.0
+            c = 3.0 * h_b / 2.0 + epsilon - zz_p_xy_over_2 / 2.0 - b_2 / 2.0 - b_3 / 2.0
 
             b_1 = 0.0
             b_1_p = 0.0
@@ -405,38 +401,38 @@ class LoopTransitionWeights:
         self.populate_unprimed_bounce_weights(b_1, b_2, b_3)
         self.populate_primed_bounce_weights(b_1_p, b_2_p, b_3_p)
 
-    def transition_weights_large_field(self, Delta_positive, Delta_negative, J_ij):
+    def transition_weights_large_field(self, zz_p_xy_over_2, zz_m_xy_over_2, xy_coeff, h_b):
 
-        self.offset_b = self.h_B
-        one_over_four_J_ij = (1.0 / 4.0) * J_ij
+        self.offset_b = h_b
+        xy_coeff_over_four = xy_coeff/4.0
 
-        if self.h_B <= Delta_negative:
-            b_3_p = Delta_negative - self.h_B + self.ksi
+        if h_b <= zz_m_xy_over_2:
+            b_3_p = zz_m_xy_over_2 - h_b + self.ksi
             epsilon = self.gamma
         else:
             b_3_p = 0.0
-            if self.h_B <= Delta_positive and self.h_B <= 2.0 * one_over_four_J_ij:
-                epsilon = one_over_four_J_ij - self.h_B / 2.0 + self.gamma
+            if h_b <= zz_p_xy_over_2 and h_b <= 2.0 * xy_coeff_over_four:
+                epsilon = xy_coeff_over_four - h_b / 2.0 + self.gamma
             else:
                 epsilon = self.gamma
 
-        if self.h_B <= Delta_positive:
+        if h_b <= zz_p_xy_over_2:
             b_2_p = 0.0
         else:
-            b_2_p = self.h_B - Delta_positive + self.ksi
+            b_2_p = h_b - zz_p_xy_over_2 + self.ksi
 
-        if self.h_B < -Delta_negative:
+        if h_b < -zz_m_xy_over_2:
             b_3 = 0
         else:
-            b_3 = self.h_B + Delta_negative + self.ksi
+            b_3 = h_b + zz_m_xy_over_2 + self.ksi
 
-        a_p = -Delta_negative / 2.0 + self.h_B / 2.0 + b_3_p / 2.0 - b_2_p / 2.0
-        b_p = Delta_positive / 2.0 - self.h_B / 2.0 - b_3_p / 2.0 + b_2_p / 2.0
-        c_p = epsilon - one_over_four_J_ij + self.h_B / 2.0 - b_3_p / 2.0 - b_2_p / 2.0
+        a_p = -zz_m_xy_over_2 / 2.0 + h_b / 2.0 + b_3_p / 2.0 - b_2_p / 2.0
+        b_p = zz_p_xy_over_2 / 2.0 - h_b / 2.0 - b_3_p / 2.0 + b_2_p / 2.0
+        c_p = epsilon - xy_coeff_over_four + h_b / 2.0 - b_3_p / 2.0 - b_2_p / 2.0
 
-        a = -Delta_negative / 2.0 - self.h_B / 2.0 + b_3 / 2.0
-        b = Delta_positive / 2.0 + self.h_B / 2.0 - b_3 / 2.0
-        c = epsilon - one_over_four_J_ij + 3.0 * self.h_B / 2.0 - b_3 / 2.0
+        a = -zz_m_xy_over_2 / 2.0 - h_b / 2.0 + b_3 / 2.0
+        b = zz_p_xy_over_2 / 2.0 + h_b / 2.0 - b_3 / 2.0
+        c = epsilon - xy_coeff_over_four + 3.0 * h_b / 2.0 - b_3 / 2.0
 
         b_1 = 0.0
         b_2 = 0.0
@@ -450,16 +446,16 @@ class LoopTransitionWeights:
         self.populate_unprimed_bounce_weights(b_1, b_2, b_3)
         self.populate_primed_bounce_weights(b_1_p, b_2_p, b_3_p)
 
-    def compute_transition_weights(self, J_ij):
+    def compute_transition_weights(self, xy_coeff, zz_coeff, h_b):
 
-        Delta_over_four_J_ij = (self.Delta / 4.0) * J_ij
+        zz_coeff_over_four = zz_coeff/4.0
 
-        Delta_positive = ((self.Delta + 1.0) / (2.0)) * J_ij
-        Delta_negative = ((self.Delta - 1.0) / (2.0)) * J_ij
+        zz_p_xy_over_2 = zz_coeff/2.0 + xy_coeff/2.0
+        zz_m_xy_over_2 = zz_coeff/2.0 - xy_coeff/2.0
 
-        if Delta_over_four_J_ij > self.h_B:
-            self.tranisiton_weights_small_field(Delta_over_four_J_ij, Delta_positive, Delta_negative)
-        elif self.Delta < 0.0:
-            self.transition_weights_negative_Delta(Delta_over_four_J_ij, Delta_positive, Delta_negative, J_ij)
+        if zz_coeff_over_four > h_b:
+            self.tranisiton_weights_small_field(zz_coeff_over_four, zz_p_xy_over_2, zz_m_xy_over_2, h_b)
+        elif zz_coeff < 0.0:
+            self.transition_weights_negative_Delta(zz_coeff_over_four, zz_p_xy_over_2, zz_m_xy_over_2, xy_coeff, h_b)
         else:
-            self.transition_weights_large_field(Delta_positive, Delta_negative, J_ij)
+            self.transition_weights_large_field(zz_p_xy_over_2, zz_m_xy_over_2, xy_coeff, h_b)
