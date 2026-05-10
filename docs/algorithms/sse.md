@@ -6,7 +6,7 @@ $$
 Z = \text{Tr} (e^{-\beta H}), \ \ \ \rho = e^{-\beta H}
 $$
 
-where $\beta = 1/T$ is the reciperocal temperature, $H$ is the Hamiltonian, and we $\rho$ is the imaginary time propagator. In statitical mechanics, we are interested in equilibrium properties which can be evaluated via the usual approach:
+where $\beta = 1/T$ is the reciperocal temperature, $H$ is the Hamiltonian, and we $\rho$ is the imaginary time propagator. In statistical mechanics, we are interested in equilibrium properties which can be evaluated via the usual approach:
 
 $$
 \langle O \rangle = \frac{1}{Z} \text{Tr} (O e^{-\beta H}) 

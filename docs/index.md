@@ -20,21 +20,30 @@ Both of these simulators are wrapped in a lightweight Python preprocessor respon
 
 ### Runtime Dependencies
 - Python 3.10+  
-- Julia 1.12+   
+- Julia 1.12+  
 - CMake 3.24+  
-- Clang 17+ or GCC 14+ (C++ Compiler) 
+- Clang 17+ or GCC 14+ (C++ Compiler)  
+
 CMake and a C++ compiler are required for building the long range QMC source code 
 
 ### Python Packages
 This package also requires a number of Python libraries:  
+
 - Numpy  
 - Scipy  
 - Matplotlib  
+
 These are installed automatically by pip as part of the Heisenberg Ion package install
 
 ### C++ Dependencies
-- spdlog 
-This is fetched and compiled automatically by CMake while building the C++ source if required
+- spdlog  
+- HDF5  
+
+The spdlog dependency is fetched and compiled automatically by CMake while building the C++ source.
+The HDF5 package needs to installed. This can be done as follows: 
+```
+brew install hdf5
+```
 
 ## Getting Started
 To use this package, first clone the Heisenberg Ion repository:  

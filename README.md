@@ -20,9 +20,14 @@ This package also requires a number of Python libraries:
 These are installed automatically by pip as part of the Heisenberg Ion package install
 
 ### C++ Dependencies
-- spdlog 
+- spdlog  
+- HDF5  
 
-This is fetched and compiled automatically by CMake while building the C++ source if required
+The spdlog dependency is fetched and compiled automatically by CMake while building the C++ source.
+The HDF5 package needs to installed. This can be done as follows: 
+```
+brew install hdf5
+```
 
 ## Getting Started
 To use this package, first clone the Heisenberg Ion repository:  
