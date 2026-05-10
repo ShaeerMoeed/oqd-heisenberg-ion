@@ -16,7 +16,8 @@ public:
     double J;
     double beta;
     double gamma;
-    double alpha;
+    double xy_alpha;
+    double zz_alpha;
     double ksi;
     double Delta;
     double h;
@@ -25,7 +26,8 @@ public:
     std::shared_ptr<spdlog::logger> logger;
 
     int hamiltonian_type;
-    std::string interaction_type;
+    std::string xy_interaction_type;
+    std::string zz_interaction_type;
 
     std::string simulation_subfolder;
     std::string root_folder;
@@ -99,7 +101,7 @@ public:
 
     void extractLoopType(const std::string &key_str, const std::string &val_str);
 
-    void extractInteractionType(const std::string &key_str, const std::string &val_str);
+    void extractInteractionType(const std::string &key_str, const std::string &val_str, std::string &member_var);
 
     void extractInitialConditionsFromFile(std::string &file_path);
 
