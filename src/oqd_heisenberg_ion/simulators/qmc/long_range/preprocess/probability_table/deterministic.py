@@ -54,7 +54,7 @@ class Deterministic(ProbabilityTable):
         populates the probability tables for deterministic sampling
         """
 
-        self.compute_max_over_states(self.system.geometry.num_bonds, self.system.interactions.J_ij_vector)
+        self.compute_max_over_states(self.system.geometry.num_bonds, self.system.xy_interactions.J_ij_vector)
         self.compute_spectrum_offset(self.system.hamiltonian_parameters.hamiltonian_name)
 
     def compute_spectrum_offset(self, hamiltonian_name):

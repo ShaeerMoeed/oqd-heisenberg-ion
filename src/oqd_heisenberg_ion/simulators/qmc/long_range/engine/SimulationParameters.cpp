@@ -92,12 +92,19 @@ SimulationParameters::SimulationParameters(std::map<std::string, std::string> &i
     }
     writeNumericEntry("h", h, ofs);
 
-    extractInteractionType("interaction_type", input_key_vals["interaction_type"]);
-    writeStringEntry("interaction_type", interaction_type, ofs);
-    if (interaction_type == "power_law") {
-        extractDoubleEntry("alpha", input_key_vals["alpha"], alpha,
+    extractInteractionType("xy_interaction_type", input_key_vals["xy_interaction_type"], xy_interaction_type);
+    writeStringEntry("xy_interaction_type", xy_interaction_type, ofs);
+    if (xy_interaction_type == "power_law") {
+        extractDoubleEntry("xy_alpha", input_key_vals["xy_alpha"], xy_alpha,
                            true, 0.0);
-        writeNumericEntry("alpha", alpha, ofs);
+        writeNumericEntry("xy_alpha", xy_alpha, ofs);
+    }
+    extractInteractionType("zz_interaction_type", input_key_vals["zz_interaction_type"], zz_interaction_type);
+    writeStringEntry("zz_interaction_type", zz_interaction_type, ofs);
+    if (zz_interaction_type == "power_law") {
+        extractDoubleEntry("zz_alpha", input_key_vals["zz_alpha"], zz_alpha,
+                           true, 0.0);
+        writeNumericEntry("zz_alpha", zz_alpha, ofs);
     }
     extractDoubleEntry("J", input_key_vals["J"], J,
                        true, 0.0);
@@ -401,14 +408,15 @@ void SimulationParameters::extractHamiltonianType(const std::string &key_str, co
     }
 }
 
-void SimulationParameters::extractInteractionType(const std::string &key_str, const std::string &val_str) {
+void SimulationParameters::extractInteractionType(const std::string &key_str, const std::string &val_str, 
+    std::string &member_var) {
 
-    extractStringEntry(key_str, val_str, interaction_type);
+    extractStringEntry(key_str, val_str, member_var);
 
-    if (interaction_type != "power_law" && interaction_type != "matrix_input") {
-        logger->error("Supported interaction types are: 'power_law' and 'matrix_input'");
+    if (member_var != "power_law" && member_var != "matrix_input" && member_var != "vector_input") {
+        logger->error("Supported interaction types are: 'power_law', 'matrix_input' and 'vector_input");
         logger->flush();
-        throw std::runtime_error("Supported interaction types are: 'Power-Law' and 'Matrix-Input'\n");
+        throw std::runtime_error("Supported interaction types are: 'Power-Law', 'Matrix-Input' and 'Vector-Input\n");
     }
 }
 

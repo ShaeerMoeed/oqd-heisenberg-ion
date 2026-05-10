@@ -1,3 +1,4 @@
+from .field import FieldFactory
 from .geometry import GeometryFactory
 from .hamiltonian import HamiltonianFactory
 from .interactions import InteractionsFactory
@@ -33,13 +34,36 @@ class System:
         self.geometry = GeometryFactory.create(self.geometry_name, **geometry_args)
 
         self.interaction_range = kwargs["interaction_range"]
-        self.interaction_name = self.get_interaction_name(kwargs)
-        self.interaction_args = InteractionsFactory.extract_args(self.interaction_name, **kwargs)
-        self.interactions = InteractionsFactory.create(self.interaction_name, self.geometry, **self.interaction_args)
+        self.xy_interaction_name = kwargs["xy_interaction_type"] if "xy_interaction_type" in kwargs.keys() else "constant"
+        self.xy_interaction_args = InteractionsFactory.extract_args(self.xy_interaction_name, "xy", **kwargs)
+        print(self.xy_interaction_args)
+        self.xy_interactions = InteractionsFactory.create(
+            "xy", 
+            self.xy_interaction_name, 
+            self.geometry, 
+            **self.xy_interaction_args
+            )
 
-    def get_interaction_name(self, kwarg_dict):
+        self.get_zz_interaction_config(kwargs)
+
+        self.zz_interaction_args = InteractionsFactory.extract_args(self.zz_interaction_name, self.zz_coeffs_type, **kwargs)
+        self.zz_interactions = InteractionsFactory.create(
+            "zz", 
+            self.zz_interaction_name, 
+            self.geometry, 
+            **self.zz_interaction_args
+            )
+
+        self.field_name = kwargs["field_type"] if "field_type" in kwargs.keys() else "constant"
+        self.field_args = FieldFactory.extract_args(self.field_name, **kwargs)
+        self.field = FieldFactory.create(self.field_name, self.geometry, **self.field_args)
+
+        self.hamiltonian_parameters.construct_coeff_arrays(self.xy_interactions, self.zz_interactions, self.field)
+        self.hamiltonian_parameters.validate_coefficient_arrays()
+
+    def get_zz_interaction_config(self, kwarg_dict):
         """
-        Extracts sets the interaction_name from inputs if long range interactions are specified by inputs
+        Sets the interaction configurations for the ZZ term from inputs if available. Defaults to XY case otherwise.
 
         Args:
             kwarg_dict (dict): contains the interaction_type key value pair
@@ -48,24 +72,12 @@ class System:
             (str): interaction name
         """
 
-        if self.interaction_range == "long_range":
-            return kwarg_dict["interaction_type"]
+        if "zz_interaction_type" in kwarg_dict.keys():
+            self.zz_interaction_name = kwarg_dict["zz_interaction_type"]
+            self.zz_coeffs_type = "zz"
         else:
-            return self.interaction_range
-
-    def compute_h_B(self):
-        """
-        computes the required h_B parameter for stochastic series expansion based on the field strength, the energy scale and the geometry
-
-        Returns:
-            (float): h_B, the field contribution of a single bond in SSE
-        """
-
-        h = self.hamiltonian_parameters.h
-        J = self.hamiltonian_parameters.J
-        num_neighbors = self.geometry.num_neighbors_per_site
-
-        return h / (J * num_neighbors)
+            self.zz_interaction_name = self.xy_interaction_name
+            self.zz_coeffs_type = "xy"
 
     def update_parameters(self, parameter_dict):
         """
@@ -80,5 +92,7 @@ class System:
 
         self.hamiltonian_parameters.update_parameters(parameter_dict)
         self.geometry.update_parameters(parameter_dict)
+
+        self.zz_interactions.update_parameters(parameter_dict)
 
         return parameter_dict

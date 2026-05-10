@@ -82,7 +82,7 @@ class ExactDiagonalization(Preprocessor):
 
         if system.interaction_range == "long_range":
             J_ij_file_path = os.path.join(run_folder, "J_ij_file.csv")
-            system.interactions.write_to_file(J_ij_file_path)
+            system.xy_interactions.write_to_file(J_ij_file_path)
             misc_args["J_ij_file"] = J_ij_file_path
 
         self.processed_configs.append(input_config.simulation_config)

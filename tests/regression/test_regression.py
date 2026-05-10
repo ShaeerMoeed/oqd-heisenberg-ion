@@ -25,15 +25,13 @@ with open(os.path.abspath("tests/regression/regression_results.json"), "r") as f
         ["XY", 10.0, 0.0, "deterministic", 7],
     ],
 )
-
-
 def test_long_range(hamiltonian_name, alpha, h, loop_type, case_iter, tmp_path):
 
     # Long range QMC
     input_file = "tests/input_files/long_range.txt"
     inputs = InputReader(input_file_path=input_file)
     inputs.read_inputs_from_file()
-    inputs.read_kwarg_inputs(hamiltonian_name=hamiltonian_name, alpha=alpha, h=h, loop_type=loop_type, root_folder=tmp_path)
+    inputs.read_kwarg_inputs(hamiltonian_name=hamiltonian_name, xy_alpha=alpha, h=h, loop_type=loop_type, root_folder=tmp_path)
     parameter_set_list = inputs.parameter_set_list
     preprocessor = PreprocessorFactory.create("long_range_qmc", parameter_set_list)
     driver_inputs = preprocessor.preprocess()

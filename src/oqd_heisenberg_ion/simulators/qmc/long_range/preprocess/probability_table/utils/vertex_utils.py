@@ -61,13 +61,13 @@ def generate_new_vertex_type_array():
 new_vertex_map = generate_new_vertex_type_array()  # all possible transitions for all vertices
 
 
-def set_vertex_weights(vertex_weights, bond, Delta, J_ij, h_B):
+def set_vertex_weights(vertex_weights, bond, zz_coeff, xy_coeff, h_b):
 
-    vertex_weights[0, bond] = ((Delta / 4.0) * J_ij) + h_B
-    vertex_weights[1, bond] = -((Delta / 4.0) * J_ij)
+    vertex_weights[0, bond] = zz_coeff/4.0 + h_b
+    vertex_weights[1, bond] = -zz_coeff/4.0
     vertex_weights[2, bond] = vertex_weights[1, bond]
-    vertex_weights[3, bond] = ((Delta / 4.0) * J_ij) - h_B
-    vertex_weights[4, bond] = 0.5 * J_ij
+    vertex_weights[3, bond] = zz_coeff/4.0 - h_b
+    vertex_weights[4, bond] = 0.5 * xy_coeff
     vertex_weights[5, bond] = vertex_weights[4, bond]
 
     return 0

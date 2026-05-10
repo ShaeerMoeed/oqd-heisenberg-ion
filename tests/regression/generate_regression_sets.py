@@ -23,7 +23,7 @@ uuids = [names[i] + "_alpha_" + str(alphas[i]) for i in range(len(names))]
 input_file = "tests/input_files/long_range.txt"
 inputs = InputReader(input_file_path=input_file)
 inputs.read_inputs_from_file()
-inputs.read_kwarg_inputs(hamiltonian_name=names, alpha=alphas, uuid=uuids, loop_type=loop_types, h=h_list)
+inputs.read_kwarg_inputs(hamiltonian_name=names, xy_alpha=alphas, uuid=uuids, loop_type=loop_types, h=h_list)
 parameter_set_list = inputs.parameter_set_list
 preprocessor = PreprocessorFactory.create("long_range_qmc", parameter_set_list)
 driver_inputs = preprocessor.preprocess()
@@ -37,7 +37,7 @@ for i in range(len(names)):
     estimator_outputs = compute_qmc_stats(qmc_outputs_file)
     stats_dict = {}
     stats_dict["name"] = names[i]
-    stats_dict["alpha"] = alphas[i]
+    stats_dict["xy_alpha"] = alphas[i]
     stats_dict["h"] = h_list[i]
     stats_dict["energy_mean"] = estimator_outputs[0][1]
     stats_dict["energy_std"] = estimator_outputs[1][1]
@@ -77,6 +77,6 @@ for i in range(len(names)):
 
     data_for_json.append(stats_dict)
 
-json_file_path = os.path.abspath("tests/regression/regression_results.json")
+json_file_path = os.path.abspath("tests/regression/regression_results_test.json")
 with open(json_file_path, "w") as json_file:
     json.dump(data_for_json, json_file, indent=2)

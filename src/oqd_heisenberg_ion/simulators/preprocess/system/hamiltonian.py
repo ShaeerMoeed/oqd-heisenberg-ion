@@ -1,3 +1,6 @@
+import numpy as np
+
+
 class HamiltonianParameters:
     """
     Base class for Hamiltonian parameters
@@ -16,6 +19,10 @@ class HamiltonianParameters:
         self.h = None
         self.J = None
         self.B = None
+        self.xy_coeff_array = None
+        self.zz_coeff_array = None
+        self.z_field_array = None
+
 
     def update_parameters(self, parameter_dict):
         """
@@ -36,6 +43,28 @@ class HamiltonianParameters:
         parameter_dict["B"] = self.B
 
         return parameter_dict
+    
+    def construct_coeff_arrays(self, xy_interactions, zz_interactions, field):
+        """
+        initializes the arrays containing the coefficients of the (S^X_iS^X_j + S^Y_iS^Y_j) and S^Z_i S^Z_j terms in the Hamiltonian.
+        Base implementation can be used when Delta is bond-independent.  
+
+        Args:
+            geometry (Geometry): specifies the lattice sites and distances
+            xy_interactions (Interactions): contains the J_ij interactions for each bond in the lattice for the XY term
+            zz_interactions (Interactions): contains the J_ij interactions for each bond in the lattice for the ZZ term
+            bond_field_prefactor (float): pre-factor for field strength so that h(bond) = h * bond_field_prefactor
+        """
+
+        self.xy_coeff_array = xy_interactions.J_ij_vector
+        self.zz_coeff_array = self.Delta * zz_interactions.J_ij_vector
+        self.z_field_array = (self.h/self.J) * field.H_b_vector
+
+    def validate_coefficient_arrays(self):
+        """
+        Each subclass should implement its own validation logic for the coefficient arrays wherever required 
+        """
+        pass
 
 
 class HamiltonianFactory:
@@ -133,6 +162,14 @@ class FMHeisenbergAFMZ(HamiltonianParameters):
 
         if self.J <= 0:
             raise Exception("J must be positive for ferromagnetic interactions")
+        
+    def validate_coefficient_arrays(self):
+
+        if np.any(np.abs(self.z_field_array) > 1e-15):
+            raise Exception("Z field coefficients should be identically zero for the FMHeisenbergAFMZ model")
+        
+        if np.any(np.abs(self.xy_coeff_array + self.zz_coeff_array) > 1e-15):
+            raise Exception("ZZ coefficients should be equal to -XX coefficients for the FMHeisenbergAFMZ model")
 
 
 class XY(HamiltonianParameters):
@@ -158,6 +195,14 @@ class XY(HamiltonianParameters):
         self.h = 0.0
         self.J = J
         self.B = 0.0
+
+    def validate_coefficient_arrays(self):
+
+        if np.any(np.abs(self.z_field_array) > 1e-15):
+            raise Exception("Z field coefficients should be identically zero for the XY model")
+        
+        if np.any(np.abs(self.zz_coeff_array) > 1e-15):
+            raise Exception("ZZ coefficients should be identically zero for the XY model")
 
 
 class FMHeisenbergFMZ(HamiltonianParameters):
@@ -192,6 +237,14 @@ class FMHeisenbergFMZ(HamiltonianParameters):
 
         if self.J <= 0:
             raise Exception("J must be positive for ferromagnetic interactions")
+        
+    def validate_coefficient_arrays(self):
+
+        if np.any(np.abs(self.z_field_array) > 1e-15):
+            raise Exception("Z field coefficients should be identically zero for the FMHeisenbergFMZ model")
+        
+        if np.any(np.abs(self.xy_coeff_array - self.zz_coeff_array) > 1e-15):
+            raise Exception("ZZ coefficients should be equal to XX coefficients for the FMHeisenbergFMZ model")
 
 
 class XXZ(HamiltonianParameters):
@@ -206,8 +259,8 @@ class XXZ(HamiltonianParameters):
         sets the corresponding member variables
 
         Args:
-            J (float): energy scale
             Delta (float): coefficient of the Z_i Z_j term in the Hamiltonian
+            J (float): energy scale
         """
 
         super().__init__()
@@ -218,6 +271,14 @@ class XXZ(HamiltonianParameters):
         self.h = 0.0
         self.J = J
         self.B = 0.0
+
+    def validate_coefficient_arrays(self):
+
+        if np.any(np.abs(self.z_field_array) > 1e-15):
+            raise Exception("Z field coefficients should be identically zero for the XXZ model")
+        
+        if np.any(np.abs(self.xy_coeff_array - (1.0/self.Delta) * self.zz_coeff_array) > 1e-15):
+            raise Exception("ZZ coefficients should be equal to Delta x XX coefficients for the XXZ model")
 
 
 class XXZh(HamiltonianParameters):
@@ -232,9 +293,9 @@ class XXZh(HamiltonianParameters):
         sets the corresponding member variables
 
         Args:
-            J (float): energy scale
             Delta (float): coefficient of the Z_i Z_j term in the Hamiltonian
             h (float): longitudinal field strength, must be positive for QMC
+            J (float): energy scale
         """
 
         super().__init__()
@@ -245,6 +306,14 @@ class XXZh(HamiltonianParameters):
         self.h = h
         self.J = J
         self.B = 0.0
+
+    def validate_coefficient_arrays(self):
+
+        if not np.allclose(self.z_field_array, self.z_field_array[0]):
+            raise Exception("Z field coefficients should be identical for the XXZh model")
+        
+        if np.any(np.abs(self.xy_coeff_array - (1.0/self.Delta) * self.zz_coeff_array) > 1e-15):
+            raise Exception("ZZ coefficients should be equal to Delta x XX coefficients for the XXZh model")
 
 
 class AFMHeisenbergFMZ(HamiltonianParameters):
@@ -279,6 +348,14 @@ class AFMHeisenbergFMZ(HamiltonianParameters):
 
         if self.J >= 0:
             raise Exception("J must be negative for anti-ferromagnetic interactions")
+        
+    def validate_coefficient_arrays(self):
+
+        if np.any(np.abs(self.z_field_array) > 1e-15):
+            raise Exception("Z field coefficients should be identically zero for the AFMHeisenbergFMZ model")
+        
+        if np.any(np.abs(self.xy_coeff_array - self.zz_coeff_array) > 1e-15):
+            raise Exception("ZZ coefficients should be equal to XX coefficients for the AFMHeisenbergFMZ model")
 
 
 class XXZhB(HamiltonianParameters):
@@ -293,10 +370,10 @@ class XXZhB(HamiltonianParameters):
         sets the corresponding member variables
 
         Args:
-            J (float): energy scale
             Delta (float): coefficient of the Z_i Z_j term in the Hamiltonian
             h (float): longitudinal field strength
             B (float): transverse field strength
+            J (float): energy scale
         """
 
         super().__init__()
@@ -308,6 +385,42 @@ class XXZhB(HamiltonianParameters):
         self.J = J
         self.B = B
 
+    def validate_coefficient_arrays(self):
+
+        if not np.anyclose(self.z_field_array, self.z_field_array[0]):
+            raise Exception("Z field coefficients should be identical for the XXZhB model")
+        
+        if np.any(np.abs(self.xy_coeff_array - self.zz_coeff_array) > 1e-15):
+            raise Exception("ZZ coefficients should be equal to Delta x XX coefficients for the XXZhB model")
+        
+
+class InhomogenousXXZh(HamiltonianParameters):
+
+    """
+    Inhomogenous XXZ model with a longitudinal field. Allows independent ZZ and XY coefficients and site-dependent fields
+    TODO: Add support for long range QMC and ED for this hamiltonian type
+    """
+
+    args = {"Delta": float, "h": float, "J": float}
+
+    def __init__(self, Delta, h, J):
+        """
+        sets the corresponding member variables
+
+        Args:
+            Delta (float): coefficient of the Z_i Z_j term in the Hamiltonian
+            h (float): longitudinal field strength
+            J (float): energy scale
+        """
+
+        super().__init__()
+
+        self.hamiltonian_name = "inhomogenous_XXZh"
+        self.Delta = Delta
+        self.hamiltonian_type = 6
+        self.h = h
+        self.J = J
+
 
 # Register all implemented Hamiltonian parameter types in the base HamiltonianParameters class
 HamiltonianFactory.register("XY", XY)
@@ -317,3 +430,4 @@ HamiltonianFactory.register("XXZhB", XXZhB)
 HamiltonianFactory.register("fm_heisenberg_fm_Z", FMHeisenbergFMZ)
 HamiltonianFactory.register("fm_heisenberg_afm_Z", FMHeisenbergAFMZ)
 HamiltonianFactory.register("afm_heisenberg_fm_Z", AFMHeisenbergFMZ)
+HamiltonianFactory.register("inhomogenous_XXZh", InhomogenousXXZh)
