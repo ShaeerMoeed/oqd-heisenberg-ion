@@ -14,7 +14,7 @@ class Heatbath(ProbabilityTable):
     """
 
     args = {"gamma": float}
-    allowed_hamiltonians = {"XXZ", "XXZh", "XY", "fm_heisenberg_fm_Z", "fm_heisenberg_afm_Z"}
+    allowed_hamiltonians = {"XXZ", "XXZh", "XY", "fm_heisenberg_fm_Z", "fm_heisenberg_afm_Z", "inhomogenous_XXZh"}
 
     def __init__(self, system, gamma):
         """
@@ -28,8 +28,6 @@ class Heatbath(ProbabilityTable):
         super().__init__(system, gamma=gamma)
 
         self.gamma = gamma
-
-        self.h_B = self.system.compute_h_B()
 
         self.validate_system()
 
@@ -59,13 +57,13 @@ class Heatbath(ProbabilityTable):
         """
 
         num_bonds = self.system.geometry.num_bonds
-        J_ij_vector = self.system.interactions.J_ij_vector
+        xy_interactions_vector = self.system.hamiltonian_parameters.xy_coeff_array
+        zz_interactions_vector = self.system.hamiltonian_parameters.zz_coeff_array
+        h_b_vector = self.system.hamiltonian_parameters.z_field_array
         gamma = self.gamma
-        h_B = self.h_B
-        Delta = self.system.hamiltonian_parameters.Delta
 
         self.initialize_tables(num_bonds)
-        self.compute_prob_tables_heat_bath(num_bonds, J_ij_vector, gamma, h_B, Delta)
+        self.compute_prob_tables_heat_bath(num_bonds, xy_interactions_vector, gamma, h_b_vector, zz_interactions_vector)
 
         return 0
 
@@ -90,21 +88,21 @@ class Heatbath(ProbabilityTable):
         return 0
 
     # Helper function used by compute_prob_tables_heat_bath
-    def compute_offset(self, gamma, Delta, J_ij, h_B):
+    def compute_offset(self, gamma, zz_coeff, h_b):
 
-        if h_B < 0.0:
+        if h_b < 0.0:
             raise Exception("h_B needs to be greater than or equal to 0")
         else:
-            Delta_over_four_J_ij = (Delta / 4.0) * J_ij
+            zz_coeff_over_4 = zz_coeff/4.0
 
-            if Delta_over_four_J_ij > h_B:
-                offset_b = Delta_over_four_J_ij
+            if zz_coeff_over_4 > h_b:
+                offset_b = zz_coeff_over_4
 
-            elif Delta < 0.0:
-                offset_b = h_B - Delta_over_four_J_ij
+            elif zz_coeff < 0.0:
+                offset_b = h_b - zz_coeff_over_4
 
             else:
-                offset_b = h_B
+                offset_b = h_b
 
             offset_b += gamma
 
@@ -140,16 +138,18 @@ class Heatbath(ProbabilityTable):
     # Generating this table might be slow for large systems because size grows as N^2.
     # Simpler but slightly slower approach would be to:
     # compute non-zero heat bath probabilities on the fly
-    def compute_prob_tables_heat_bath(self, num_bonds, J_ij_vector, gamma, h_B, Delta):
+    def compute_prob_tables_heat_bath(self, num_bonds, xy_coeff_vector, gamma, h_b_vector, zz_coeff_vector):
 
         for bond in range(num_bonds):
-            J_ij = J_ij_vector[bond]
+            xy_coeff = xy_coeff_vector[bond]
+            zz_coeff = zz_coeff_vector[bond]
+            h_b = h_b_vector[bond]
 
-            vu.set_vertex_weights(self.vertex_weights, bond, Delta, J_ij, h_B)
+            vu.set_vertex_weights(self.vertex_weights, bond, zz_coeff, xy_coeff, h_b)
 
             self.diag_prob_table[:, bond] = self.vertex_weights[0:4, bond]
 
-            offset = self.compute_offset(gamma, Delta, J_ij, h_B)
+            offset = self.compute_offset(gamma, zz_coeff, h_b)
 
             self.vertex_weights[0:4, bond] += offset
             self.spectrum_offset += offset
