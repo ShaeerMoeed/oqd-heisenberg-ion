@@ -9,28 +9,21 @@ from oqd_heisenberg_ion.common.preprocessor.factory import PreprocessorFactory
 
 data_for_json = []
 
-
 def compute_qmc_stats(qmc_outputs_file):
     estimator_outputs = np.loadtxt(qmc_outputs_file, delimiter=",", skiprows=2)
     return np.mean(estimator_outputs, axis=0), np.std(estimator_outputs, axis=0)
 
-
 # Long range QMC
-#names = ["fm_heisenberg_afm_Z", "fm_heisenberg_fm_Z", "XXZ", "XXZh", "XXZh", "XY", "XY", "XY"]
-#alphas = [1.0, 2.0, 1.5, 2.5, 3.0, 1.0, 3.0, 10.0]
-#h_list = [0.0, 0.0, 0.0, 0.5, 1.0, 0.0, 0.0, 0.0]
-#loop_types = ["deterministic", "deterministic", "directed_loop", "directed_loop", "heatbath", "deterministic", "deterministic", "deterministic"]
-
-names = ["XXZ", "XXZh"]
-alphas = [2.5, 2.5]
-h_list = [0.0, 0.0]
-loop_types = ["directed_loop", "directed_loop"]
+names = ["fm_heisenberg_afm_Z", "fm_heisenberg_fm_Z", "XXZ", "XXZh", "XXZh", "XY", "XY", "XY"]
+alphas = [1.0, 2.0, 1.5, 2.5, 3.0, 1.0, 3.0, 10.0]
+h_list = [0.0, 0.0, 0.0, 0.5, 1.0, 0.0, 0.0, 0.0]
+loop_types = ["deterministic", "deterministic", "directed_loop", "directed_loop", "heatbath", "deterministic", "deterministic", "deterministic"]
 
 uuids = [names[i] + "_alpha_" + str(alphas[i]) for i in range(len(names))]
 input_file = "tests/input_files/long_range.txt"
 inputs = InputReader(input_file_path=input_file)
 inputs.read_inputs_from_file()
-inputs.read_kwarg_inputs(hamiltonian_name=names, alpha=alphas, uuid=uuids, loop_type=loop_types, h=h_list)
+inputs.read_kwarg_inputs(hamiltonian_name=names, xy_alpha=alphas, uuid=uuids, loop_type=loop_types, h=h_list)
 parameter_set_list = inputs.parameter_set_list
 preprocessor = PreprocessorFactory.create("long_range_qmc", parameter_set_list)
 driver_inputs = preprocessor.preprocess()
@@ -44,7 +37,8 @@ for i in range(len(names)):
     estimator_outputs = compute_qmc_stats(qmc_outputs_file)
     stats_dict = {}
     stats_dict["name"] = names[i]
-    stats_dict["alpha"] = alphas[i]
+    stats_dict["xy_alpha"] = alphas[i]
+    stats_dict["h"] = h_list[i]
     stats_dict["energy_mean"] = estimator_outputs[0][1]
     stats_dict["energy_std"] = estimator_outputs[1][1]
     stats_dict["magnetization_mean"] = estimator_outputs[0][2]
@@ -83,6 +77,6 @@ for i in range(len(names)):
 
     data_for_json.append(stats_dict)
 
-json_file_path = os.path.abspath("tests/regression/regression_results.json")
+json_file_path = os.path.abspath("tests/regression/regression_results_test.json")
 with open(json_file_path, "w") as json_file:
     json.dump(data_for_json, json_file, indent=2)

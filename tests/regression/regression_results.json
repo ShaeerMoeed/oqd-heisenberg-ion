@@ -1,23 +1,91 @@
 [
   {
+    "name": "fm_heisenberg_afm_Z",
+    "alpha": 1.0,
+    "h": 0.0,
+    "energy_mean": -2.7058000000000004,
+    "energy_std": 0.14420769743671796,
+    "magnetization_mean": 0.0,
+    "magnetization_std": 0.10000000000000003,
+    "stiffness_mean": 1.25425,
+    "stiffness_std": 1.8178044965012048
+  },
+  {
+    "name": "fm_heisenberg_fm_Z",
+    "alpha": 2.0,
+    "h": 0.0,
+    "energy_mean": -1.5655500000000007,
+    "energy_std": 0.13645859262061882,
+    "magnetization_mean": 0.0,
+    "magnetization_std": 0.34000000000000014,
+    "stiffness_mean": 0.34325000000000006,
+    "stiffness_std": 0.515374317850628
+  },
+  {
     "name": "XXZ",
-    "alpha": 2.5,
-    "energy_mean": -1.6496289999999996,
-    "energy_std": 0.10985281061493146,
-    "magnetization_mean": 0.014000000000000002,
-    "magnetization_std": 0.09901515035589248,
-    "stiffness_mean": 0.6197500000000001,
-    "stiffness_std": 0.6754100143616468
+    "alpha": 1.5,
+    "h": 0.0,
+    "energy_mean": -1.8465580000000006,
+    "energy_std": 0.16962237470333916,
+    "magnetization_mean": -2.7755575615628914e-19,
+    "magnetization_std": 0.10000000000000003,
+    "stiffness_mean": 0.6614999999999999,
+    "stiffness_std": 0.7339313660009361
   },
   {
     "name": "XXZh",
     "alpha": 2.5,
-    "energy_mean": -1.6496289999999996,
-    "energy_std": 0.10985281061493146,
-    "magnetization_mean": -0.03800000000000003,
-    "magnetization_std": 0.09249864863877728,
-    "stiffness_mean": 0.6197500000000001,
-    "stiffness_std": 0.6754100143616468
+    "h": 0.5,
+    "energy_mean": -2.03475,
+    "energy_std": 0.1206386650290859,
+    "magnetization_mean": 0.3000000000000005,
+    "magnetization_std": 4.996003610813204e-16,
+    "stiffness_mean": 0.3015000000000001,
+    "stiffness_std": 0.5208745050393612
+  },
+  {
+    "name": "XXZh",
+    "alpha": 3.0,
+    "h": 1.0,
+    "energy_mean": -3.2085500000000007,
+    "energy_std": 0.12889199936380846,
+    "magnetization_mean": 0.5,
+    "magnetization_std": 0.0,
+    "stiffness_mean": 0.0,
+    "stiffness_std": 0.0
+  },
+  {
+    "name": "XY",
+    "alpha": 1.0,
+    "h": 0.0,
+    "energy_mean": 2.961249999999997,
+    "energy_std": 0.002487468592766536,
+    "magnetization_mean": 0.0,
+    "magnetization_std": 0.10000000000000003,
+    "stiffness_mean": 0.1500000000000001,
+    "stiffness_std": 0.22483327155917116
+  },
+  {
+    "name": "XY",
+    "alpha": 3.0,
+    "h": 0.0,
+    "energy_mean": 2.0285999999999973,
+    "energy_std": 0.0024062418831033066,
+    "magnetization_mean": 0.0,
+    "magnetization_std": 0.10000000000000003,
+    "stiffness_mean": 0.037250000000000096,
+    "stiffness_std": 0.04235194800714593
+  },
+  {
+    "name": "XY",
+    "alpha": 10.0,
+    "h": 0.0,
+    "energy_mean": 1.7232910000000023,
+    "energy_std": 0.0022422087324778213,
+    "magnetization_mean": 0.0,
+    "magnetization_std": 0.10000000000000003,
+    "stiffness_mean": 0.02599999999999998,
+    "stiffness_std": 0.056559702969517116
   },
   {
     "name": "XY",

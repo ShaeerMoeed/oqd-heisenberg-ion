@@ -1,0 +1,14 @@
+output_folder	/Users/shaeermoeed/Github/oqd-heisenberg-ion-fork/tests/regression/regression_files/nearest_neighbor_qmc/fm_heisenberg_fm_Z
+N	4
+num_bonds	4
+hamiltonian	fm_heisenberg_fm_Z
+Delta	1.0
+boundary	periodic
+initial_M	50
+equilibration_steps	100
+mc_steps	100
+T	0.1
+J	1.0
+beta	10.0
+a	1.1
+init_config_index	1

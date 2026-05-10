@@ -1,7 +1,7 @@
 simulator	long_range_qmc	
 boundary	periodic
 interaction_range	long_range
-interaction_type	power_law
+xy_interaction_type	power_law
 spatial_dimension	1d
 lattice_type	rectangular
 
