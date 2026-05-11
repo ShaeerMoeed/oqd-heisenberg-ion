@@ -183,9 +183,6 @@ class DirectedLoops(ProbabilityTable):
     def compute_prob_tables_directed_loops(
         self, num_bonds, xy_coeff_vector, gamma, h_b_vector, zz_coeff_vector, ksi, distance_dependent_offset
     ):
-        
-        if np.any(h_b_vector < 0.0):
-            raise Exception("h_B needs to be greater than or equal to 0")
 
         self.transition_weights_calculator = LoopTransitionWeights(gamma, ksi, distance_dependent_offset)
 
@@ -287,6 +284,30 @@ class LoopTransitionWeights:
         self.transition_weight_container["b_1_p"] = b_1_p
         self.transition_weight_container["b_2_p"] = b_2_p
         self.transition_weight_container["b_3_p"] = b_3_p
+
+    def swap_primed_unprimed_weights(self):
+
+        a = self.transition_weight_container["a"]
+        b = self.transition_weight_container["b"]
+        c = self.transition_weight_container["c"]
+
+        a_p = self.transition_weight_container["a_p"]
+        b_p = self.transition_weight_container["b_p"]
+        c_p = self.transition_weight_container["c_p"]
+
+        self.populate_unprimed_transition_weights(a_p, b_p, c_p)
+        self.populate_primed_transition_weights(a, b, c)
+
+        b_1 = self.transition_weight_container["b_1"]
+        b_2 = self.transition_weight_container["b_2"]
+        b_3 = self.transition_weight_container["b_3"]
+
+        b_1_p = self.transition_weight_container["b_1_p"]
+        b_2_p = self.transition_weight_container["b_2_p"]
+        b_3_p = self.transition_weight_container["b_3_p"]
+
+        self.populate_unprimed_bounce_weights(b_1_p, b_2_p, b_3_p)
+        self.populate_primed_bounce_weights(b_1, b_2, b_3)
 
     def tranisiton_weights_small_field(self, zz_coeff_over_four, zz_p_xy_over_2, zz_m_xy_over_2, h_b):
 
@@ -453,9 +474,12 @@ class LoopTransitionWeights:
         zz_p_xy_over_2 = zz_coeff/2.0 + xy_coeff/2.0
         zz_m_xy_over_2 = zz_coeff/2.0 - xy_coeff/2.0
 
-        if zz_coeff_over_four > h_b:
-            self.tranisiton_weights_small_field(zz_coeff_over_four, zz_p_xy_over_2, zz_m_xy_over_2, h_b)
+        if zz_coeff_over_four > np.abs(h_b):
+            self.tranisiton_weights_small_field(zz_coeff_over_four, zz_p_xy_over_2, zz_m_xy_over_2, np.abs(h_b))
         elif zz_coeff < 0.0:
-            self.transition_weights_negative_Delta(zz_coeff_over_four, zz_p_xy_over_2, zz_m_xy_over_2, xy_coeff, h_b)
+            self.transition_weights_negative_Delta(zz_coeff_over_four, zz_p_xy_over_2, zz_m_xy_over_2, xy_coeff, np.abs(h_b))
         else:
-            self.transition_weights_large_field(zz_p_xy_over_2, zz_m_xy_over_2, xy_coeff, h_b)
+            self.transition_weights_large_field(zz_p_xy_over_2, zz_m_xy_over_2, xy_coeff, np.abs(h_b))
+
+        if h_b < 0.0:
+            self.swap_primed_unprimed_weights()

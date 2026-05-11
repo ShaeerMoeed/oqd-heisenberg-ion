@@ -90,23 +90,20 @@ class Heatbath(ProbabilityTable):
     # Helper function used by compute_prob_tables_heat_bath
     def compute_offset(self, gamma, zz_coeff, h_b):
 
-        if h_b < 0.0:
-            raise Exception("h_B needs to be greater than or equal to 0")
+        zz_coeff_over_4 = zz_coeff/4.0
+
+        if zz_coeff < 0.0:
+            offset_b = np.abs(h_b) - zz_coeff_over_4
+
+        elif zz_coeff_over_4 > np.abs(h_b):
+            offset_b = zz_coeff_over_4
+
         else:
-            zz_coeff_over_4 = zz_coeff/4.0
+            offset_b = np.abs(h_b)
 
-            if zz_coeff_over_4 > h_b:
-                offset_b = zz_coeff_over_4
+        offset_b += gamma
 
-            elif zz_coeff < 0.0:
-                offset_b = h_b - zz_coeff_over_4
-
-            else:
-                offset_b = h_b
-
-            offset_b += gamma
-
-            return offset_b
+        return offset_b
 
     def update_heat_bath_probs(self, bond):
 
